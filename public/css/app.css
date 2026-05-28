@@ -1,0 +1,67 @@
+.table-admin {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+.table-admin th,
+.table-admin td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+.stats {
+  display: flex;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+.stat-card {
+  background: #facc15;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: bold;
+}
+/* Admin forms */
+.admin-form {
+  max-width: 700px;
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  margin: 2rem auto;
+}
+.admin-form label {
+  display: block;
+  margin: 1rem 0 0.3rem;
+  font-weight: 600;
+}
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+}
+.admin-form button {
+  margin-top: 1.5rem;
+}
+.table-admin {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.table-admin th,
+.table-admin td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 10px;
+  text-align: left;
+}
+.table-admin th {
+  background: #0f172a;
+  color: white;
+}
+.table-admin tr:hover {
+  background: #f1f5f9;
+}
