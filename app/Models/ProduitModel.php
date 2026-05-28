@@ -14,43 +14,53 @@ class ProduitModel extends Model
     public function tousAvecCategorie()
     {
         return $this->select('produits.*, categories.nom as categorie_nom, categories.slug as categorie_slug')
-                    ->join('categories', 'categories.id = produits.categorie_id')
-                    ->where('produits.actif', 1)
-                    ->orderBy('produits.created_at', 'DESC')
-                    ->findAll();
+            ->join('categories', 'categories.id = produits.categorie_id')
+            ->where('produits.actif', 1)
+            ->orderBy('produits.created_at', 'DESC')
+            ->findAll();
     }
 
     public function parCategorie($slug)
     {
         return $this->select('produits.*, categories.nom as categorie_nom')
-                    ->join('categories', 'categories.id = produits.categorie_id')
-                    ->where('categories.slug', $slug)
-                    ->where('produits.actif', 1)
-                    ->findAll();
+            ->join('categories', 'categories.id = produits.categorie_id')
+            ->where('categories.slug', $slug)
+            ->where('produits.actif', 1)
+            ->orderBy('produits.created_at', 'DESC')
+            ->findAll();
     }
 
     public function parGenre($genre)
     {
-        return $this->select('produits.*, categories.nom as categorie_nom')
-                    ->join('categories', 'categories.id = produits.categorie_id')
-                    ->where('produits.genre', $genre)
-                    ->where('produits.actif', 1)
-                    ->findAll();
+        $builder = $this->select('produits.*, categories.nom as categorie_nom')
+            ->join('categories', 'categories.id = produits.categorie_id')
+            ->where('produits.actif', 1);
+
+        if (in_array($genre, ['homme', 'femme'], true)) {
+            $builder->groupStart()
+                ->where('produits.genre', $genre)
+                ->orWhere('produits.genre', 'mixte')
+                ->groupEnd();
+        } else {
+            $builder->where('produits.genre', $genre);
+        }
+
+        return $builder->orderBy('produits.created_at', 'DESC')->findAll();
     }
 
     public function parSlug($slug)
     {
         return $this->select('produits.*, categories.nom as categorie_nom')
-                    ->join('categories', 'categories.id = produits.categorie_id')
-                    ->where('produits.slug', $slug)
-                    ->where('produits.actif', 1)
-                    ->first();
+            ->join('categories', 'categories.id = produits.categorie_id')
+            ->where('produits.slug', $slug)
+            ->where('produits.actif', 1)
+            ->first();
     }
 
     public function diminuerStock($id, $quantite)
     {
         return $this->set('stock', "stock - $quantite", false)
-                    ->where('id', $id)
-                    ->update();
+            ->where('id', $id)
+            ->update();
     }
 }

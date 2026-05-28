@@ -89,5 +89,4 @@ INSERT INTO produits (categorie_id, genre, nom, slug, description, prix, stock, 
 
 -- Utilisateurs (mot de passe = "password" hashé)
 INSERT INTO utilisateurs (nom, email, mot_de_passe, role) VALUES
-('Admin Yakro', 'admin@yakrostyle.ci', '$2y$10$92IXUNpkj00rQ05byMi.Ye4oKeAa3R0911C/.og/at2.uheWG/igi', 'admin'),
 ('Client Test', 'client@test.ci', '$2y$10$92IXUNpkj00rQ05byMi.Ye4oKeAa3R0911C/.og/at2.uheWG/igi', 'client');

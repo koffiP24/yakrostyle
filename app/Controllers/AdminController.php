@@ -6,6 +6,7 @@ use App\Models\ProduitModel;
 use App\Models\CategorieModel;
 use App\Models\CommandeModel;
 use App\Models\UtilisateurModel;
+use CodeIgniter\HTTP\Files\UploadedFile;
 
 class AdminController extends BaseController
 {
@@ -13,12 +14,20 @@ class AdminController extends BaseController
     {
         $produitModel = new ProduitModel();
         $commandeModel = new CommandeModel();
+        $utilisateurModel = new UtilisateurModel();
+
         $data = [
             'titre' => 'Tableau de bord',
             'nbProduits' => $produitModel->countAll(),
             'nbCommandes' => $commandeModel->countAll(),
-            'nbUtilisateurs' => (new UtilisateurModel())->countAll()
+            'nbUtilisateurs' => $utilisateurModel->countAll(),
+            'nbStockFaible' => (new ProduitModel())->where('stock <', 5)->where('actif', 1)->countAllResults(),
+            'nbRuptureStock' => (new ProduitModel())->where('stock', 0)->where('actif', 1)->countAllResults(),
+            'produitsRecents' => $produitModel->orderBy('created_at', 'DESC')->findAll(5),
+            'commandesRecentes' => $commandeModel->orderBy('created_at', 'DESC')->findAll(5),
+            'utilisateursRecents' => $utilisateurModel->orderBy('created_at', 'DESC')->findAll(5),
         ];
+
         return view('admin/dashboard', $data);
     }
 
@@ -51,12 +60,13 @@ class AdminController extends BaseController
             'tissu'        => $this->request->getPost('tissu'),
             'promo'        => $this->request->getPost('promo') ?? 0
         ];
-        // Gestion de l'image
-        $file = $this->request->getFile('image');
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $newName = $file->getRandomName();
-            $file->move(ROOTPATH . 'public/images', $newName);
-            $data['image'] = $newName;
+        try {
+            $imageName = $this->enregistrerImageProduit($this->request->getFile('image'));
+            if ($imageName !== null) {
+                $data['image'] = $imageName;
+            }
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->withInput()->with('erreur', $e->getMessage());
         }
         if ($model->save($data)) {
             return redirect()->to('/admin/produits')->with('succes', 'Produit ajouté');
@@ -89,11 +99,13 @@ class AdminController extends BaseController
             'tissu'        => $this->request->getPost('tissu'),
             'promo'        => $this->request->getPost('promo') ?? 0
         ];
-        $file = $this->request->getFile('image');
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $newName = $file->getRandomName();
-            $file->move(ROOTPATH . 'public/images', $newName);
-            $data['image'] = $newName;
+        try {
+            $imageName = $this->enregistrerImageProduit($this->request->getFile('image'));
+            if ($imageName !== null) {
+                $data['image'] = $imageName;
+            }
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->withInput()->with('erreur', $e->getMessage());
         }
         if ($model->update($id, $data)) {
             return redirect()->to('/admin/produits')->with('succes', 'Produit modifié');
@@ -118,7 +130,7 @@ class AdminController extends BaseController
     public function detailCommande($id)
     {
         $commande = (new CommandeModel())->detail($id);
-        return view('admin/commandes/detail', ['titre' => 'Commande #'.$id, 'commande' => $commande]);
+        return view('admin/commandes/detail', ['titre' => 'Commande #' . $id, 'commande' => $commande]);
     }
 
     // Gestion utilisateurs
@@ -126,5 +138,43 @@ class AdminController extends BaseController
     {
         $users = (new UtilisateurModel())->findAll();
         return view('admin/utilisateurs/index', ['titre' => 'Utilisateurs', 'utilisateurs' => $users]);
+    }
+
+    private function enregistrerImageProduit(?UploadedFile $file): ?string
+    {
+        if (!$file || $file->getError() === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+
+        if (!$file->isValid() || $file->hasMoved()) {
+            throw new \RuntimeException('Image invalide ou impossible à traiter.');
+        }
+
+        if (!str_starts_with((string) $file->getMimeType(), 'image/')) {
+            throw new \RuntimeException('Le fichier envoyé doit être une image.');
+        }
+
+        $uploadPath = ROOTPATH . 'public/images';
+        if (!is_dir($uploadPath) && !mkdir($uploadPath, 0755, true)) {
+            throw new \RuntimeException('Impossible de créer le dossier des images.');
+        }
+
+        $newName = $file->getRandomName();
+        $file->move($uploadPath, $newName);
+
+        $targetPath = $uploadPath . DIRECTORY_SEPARATOR . $newName;
+
+        try {
+            service('image')
+                ->withFile($targetPath)
+                ->fit(600, 800, 'center')
+                ->save($targetPath, 85);
+        } catch (\Throwable $e) {
+            // Si le redimensionnement échoue, on conserve l'image originale
+            // pour ne pas bloquer l'ajout du produit.
+            return $newName;
+        }
+
+        return $newName;
     }
 }

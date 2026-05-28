@@ -16,10 +16,14 @@ class CommandeModel extends Model
         $db->transStart();
 
         $total = array_sum(array_map(fn($i) => $i['prix'] * $i['quantite'], $panier));
+        $reduction = $this->tauxReduction($userId);
+        $montantRemise = round($total * $reduction / 100, 2);
+        $totalApresRemise = max(0, $total - $montantRemise);
+
         $db->table('commandes')->insert([
             'user_id'    => $userId,
             'adresse'    => $adresse,
-            'total'      => $total,
+            'total'      => $totalApresRemise,
             'statut'     => 'en_attente',
             'created_at' => date('Y-m-d H:i:s')
         ]);
@@ -38,6 +42,30 @@ class CommandeModel extends Model
         return $db->transStatus() ? $commandeId : false;
     }
 
+    public function quantiteAcheteeParUtilisateur(int $userId): int
+    {
+        $result = $this->db->table('commandes c')
+            ->select('SUM(cl.quantite) as total')
+            ->join('commande_lignes cl', 'cl.commande_id = c.id')
+            ->where('c.user_id', $userId)
+            ->get()
+            ->getRowArray();
+
+        return (int) ($result['total'] ?? 0);
+    }
+
+    public function tauxReduction(int $userId): int
+    {
+        $quantite = $this->quantiteAcheteeParUtilisateur($userId);
+        if ($quantite === 0) {
+            return 75;
+        }
+        if ($quantite > 10) {
+            return 5;
+        }
+        return 0;
+    }
+
     public function detail(int $id): ?array
     {
         $cmd = $this->find($id);
@@ -53,8 +81,8 @@ class CommandeModel extends Model
     public function toutesAvecUser()
     {
         return $this->select('commandes.*, utilisateurs.nom as client_nom')
-                    ->join('utilisateurs', 'utilisateurs.id = commandes.user_id')
-                    ->orderBy('commandes.created_at', 'DESC')
-                    ->findAll();
+            ->join('utilisateurs', 'utilisateurs.id = commandes.user_id')
+            ->orderBy('commandes.created_at', 'DESC')
+            ->findAll();
     }
 }

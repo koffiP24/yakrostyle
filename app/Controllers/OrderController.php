@@ -18,12 +18,23 @@ class OrderController extends BaseController
             return redirect()->to('/produits')->with('erreur', 'Votre panier est vide.');
         }
 
+        $userId = session()->get('user_id');
+        $commandeModel = new CommandeModel();
+        $quantiteAchetee = $commandeModel->quantiteAcheteeParUtilisateur($userId);
+        $reduction = $commandeModel->tauxReduction($userId);
+
         $total = array_sum(array_map(fn($i) => $i['prix'] * $i['quantite'], $panier));
+        $montantRemise = round($total * $reduction / 100, 2);
+        $totalApresRemise = max(0, $total - $montantRemise);
 
         return view('cart/commande', [
-            'titre'  => 'Validation de la commande',
-            'panier' => $panier,
-            'total'  => $total
+            'titre'           => 'Validation de la commande',
+            'panier'          => $panier,
+            'total'           => $total,
+            'quantiteAchetee' => $quantiteAchetee,
+            'reduction'       => $reduction,
+            'montantRemise'   => $montantRemise,
+            'totalApresRemise' => $totalApresRemise,
         ]);
     }
 
@@ -52,10 +63,15 @@ class OrderController extends BaseController
         }
 
         $commandeModel = new CommandeModel();
+        $reduction = $commandeModel->tauxReduction($userId);
         $commandeId = $commandeModel->creerDepuisPanier($userId, $adresse, $panier);
 
         if (!$commandeId) {
             return redirect()->to('/commande')->with('erreur', 'Une erreur est survenue. Veuillez réessayer.');
+        }
+
+        if ($reduction > 0) {
+            session()->setFlashdata('succes', "Votre commande bénéficie d'une réduction de {$reduction}%.");
         }
 
         // Diminution des stocks
