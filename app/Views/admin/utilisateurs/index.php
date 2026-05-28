@@ -5,7 +5,7 @@
         <tr><th>ID</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Date d'inscription</th></tr>
     </thead>
     <tbody>
-    <?php foreach ($utilisateurs as $user): ?>
+    <?php foreach ($utilisateurs ?? [] as $user): ?>
         <tr>
             <td><?= $user['id'] ?></td>
             <td><?= esc($user['nom']) ?></td>
