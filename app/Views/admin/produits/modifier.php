@@ -1,4 +1,18 @@
 <?= view('layouts/header', ['titre' => 'Modifier un produit']) ?>
+<?php
+$produit = $produit ?? [
+    'categorie_id' => null,
+    'genre' => '',
+    'nom' => '',
+    'description' => '',
+    'prix' => '',
+    'stock' => '',
+    'style' => '',
+    'tissu' => '',
+    'image' => '',
+    'promo' => 0,
+];
+?>
 <div class="admin-form">
     <h1>✏️ Modifier le produit</h1>
     <form method="POST" enctype="multipart/form-data">
@@ -6,7 +20,7 @@
 
         <label>Catégorie :</label>
         <select name="categorie_id" required>
-            <?php foreach ($categories as $cat): ?>
+            <?php foreach ($categories ?? [] as $cat): ?>
                 <option value="<?= $cat['id'] ?>" <?= $cat['id'] == $produit['categorie_id'] ? 'selected' : '' ?>>
                     <?= esc($cat['nom']) ?>
                 </option>
@@ -15,7 +29,7 @@
 
         <label>Genre :</label>
         <select name="genre" required>
-            <?php foreach (['homme','femme','enfant','mixte'] as $g): ?>
+            <?php foreach (['homme', 'femme', 'enfant', 'mixte'] as $g): ?>
                 <option value="<?= $g ?>" <?= $g == $produit['genre'] ? 'selected' : '' ?>><?= ucfirst($g) ?></option>
             <?php endforeach; ?>
         </select>

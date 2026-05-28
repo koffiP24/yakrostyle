@@ -7,6 +7,7 @@
         <label>Catégorie :</label>
         <select name="categorie_id" required>
             <option value="">-- Choisir --</option>
+            <?php $categories = isset($categories) && is_array($categories) ? $categories : []; ?>
             <?php foreach ($categories as $cat): ?>
                 <option value="<?= $cat['id'] ?>"><?= esc($cat['nom']) ?></option>
             <?php endforeach; ?>
